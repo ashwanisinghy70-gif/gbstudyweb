@@ -1,0 +1,223 @@
+{
+  "entities": {
+    "AppCatalogItem": {
+      "title": "AppCatalogItem",
+      "description": "A study platform entry displayed in the GB STUDY workspace.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "logo_url": {
+          "type": "string",
+          "maxLength": 300000
+        },
+        "app_url": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "app_url_2": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "app_url_3": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "app_url_4": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "tone": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "sort_order": {
+          "type": "number"
+        },
+        "vip_text": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "open_text": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "is_active": {
+          "type": "boolean"
+        },
+        "open_mode": {
+          "type": "string",
+          "enum": ["auto", "frame", "direct"],
+          "maxLength": 16
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "label",
+        "description",
+        "tone",
+        "sort_order",
+        "vip_text",
+        "open_text",
+        "is_active",
+        "created_at"
+      ]
+    },
+    "SliderPhoto": {
+      "title": "SliderPhoto",
+      "description": "Home page carousel banner image.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "image_data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 700000
+        },
+        "sort_order": {
+          "type": "number"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "image_data", "sort_order", "created_at"]
+    },
+    "SiteBranding": {
+      "title": "SiteBranding",
+      "description": "Header branding title displayed across GB STUDY.",
+      "type": "object",
+      "properties": {
+        "header_title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["header_title", "updated_at"]
+    },
+    "SocialLinks": {
+      "title": "SocialLinks",
+      "description": "Community links shown in the Join Popup, Community Strip, and Owner Page.",
+      "type": "object",
+      "properties": {
+        "telegram": { "type": "string", "maxLength": 500 },
+        "youtube": { "type": "string", "maxLength": 500 },
+        "whatsapp": { "type": "string", "maxLength": 500 },
+        "instagram": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["telegram", "youtube", "whatsapp", "instagram"]
+    },
+    "AdminInvite": {
+      "title": "AdminInvite",
+      "description": "Shareable invite code allowing recipients to access Admin Panel on their device.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "is_active": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["code", "label", "is_active", "created_at"]
+    },
+    "AdminMember": {
+      "title": "AdminMember",
+      "description": "Verified user granted Admin Panel access via an invite link.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "invite_code": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "granted_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "invite_code", "granted_at"]
+    }
+  },
+  "firestore": {
+    "/apps/{appId}": {
+      "schema": { "$ref": "#/entities/AppCatalogItem" },
+      "description": "Study platforms added by the admin."
+    },
+    "/slider_photos/{slideId}": {
+      "schema": { "$ref": "#/entities/SliderPhoto" },
+      "description": "Carousel photos managed by the admin."
+    },
+    "/site_config/branding": {
+      "schema": { "$ref": "#/entities/SiteBranding" },
+      "description": "Site header branding configuration."
+    },
+    "/site_config/social_links": {
+      "schema": { "$ref": "#/entities/SocialLinks" },
+      "description": "Community social links configuration."
+    },
+    "/admin_invites/{inviteCode}": {
+      "schema": { "$ref": "#/entities/AdminInvite" },
+      "description": "Owner-created shareable invite links for admin access."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminMember" },
+      "description": "Authorized admin users who accepted a valid shareable admin link."
+    }
+  }
+}

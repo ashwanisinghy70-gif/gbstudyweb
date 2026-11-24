@@ -1,0 +1,241 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner() {
+      return isSignedIn() &&
+        request.auth.token.email == 'sarvottamyadav777@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isOwner() || (
+        isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOptionalNullableString(data, key, maxLen) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidApp(data) {
+      return data.keys().hasAll([
+          'id',
+          'name',
+          'label',
+          'description',
+          'tone',
+          'sort_order',
+          'vip_text',
+          'open_text',
+          'is_active',
+          'created_at'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'name',
+          'label',
+          'description',
+          'logo_url',
+          'app_url',
+          'app_url_2',
+          'app_url_3',
+          'app_url_4',
+          'tone',
+          'sort_order',
+          'vip_text',
+          'open_text',
+          'is_active',
+          'open_mode',
+          'created_at'
+        ]) &&
+        isValidId(data.id) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.label is string && data.label.size() <= 80 &&
+        data.description is string && data.description.size() <= 500 &&
+        isOptionalNullableString(data, 'logo_url', 300000) &&
+        isOptionalNullableString(data, 'app_url', 1000) &&
+        isOptionalNullableString(data, 'app_url_2', 1000) &&
+        isOptionalNullableString(data, 'app_url_3', 1000) &&
+        isOptionalNullableString(data, 'app_url_4', 1000) &&
+        data.tone is string && data.tone.size() <= 40 &&
+        data.sort_order is number &&
+        data.vip_text is string && data.vip_text.size() <= 40 &&
+        data.open_text is string && data.open_text.size() <= 40 &&
+        data.is_active is bool &&
+        (!('open_mode' in data) || (data.open_mode is string && data.open_mode.size() <= 16 && data.open_mode in ['auto', 'frame', 'direct'])) &&
+        data.created_at is timestamp;
+    }
+
+    function isValidSliderPhoto(data) {
+      return data.keys().hasAll(['id', 'image_data', 'sort_order', 'created_at']) &&
+        data.keys().hasOnly(['id', 'image_data', 'sort_order', 'created_at']) &&
+        isValidId(data.id) &&
+        data.image_data is string && data.image_data.size() >= 1 && data.image_data.size() <= 700000 &&
+        data.sort_order is number &&
+        data.created_at is timestamp;
+    }
+
+    function isValidBranding(data) {
+      return data.keys().hasAll(['header_title', 'updated_at']) &&
+        data.keys().hasOnly(['header_title', 'updated_at']) &&
+        data.header_title is string && data.header_title.size() >= 1 && data.header_title.size() <= 120 &&
+        data.updated_at is timestamp;
+    }
+
+    function isValidSocialLinks(data) {
+      return data.keys().hasAll(['telegram', 'youtube', 'whatsapp', 'instagram']) &&
+        data.keys().hasOnly(['telegram', 'youtube', 'whatsapp', 'instagram']) &&
+        data.telegram is string && data.telegram.size() <= 500 &&
+        data.youtube is string && data.youtube.size() <= 500 &&
+        data.whatsapp is string && data.whatsapp.size() <= 500 &&
+        data.instagram is string && data.instagram.size() <= 500;
+    }
+
+    function isValidAdminInvite(data) {
+      return data.keys().hasAll(['code', 'label', 'is_active', 'created_at']) &&
+        data.keys().hasOnly(['code', 'label', 'is_active', 'created_at']) &&
+        isValidId(data.code) &&
+        data.code.size() >= 8 &&
+        data.label is string && data.label.size() <= 80 &&
+        data.is_active is bool &&
+        data.created_at is timestamp;
+    }
+
+    function isValidAdminMember(data) {
+      return data.keys().hasAll(['uid', 'email', 'invite_code', 'granted_at']) &&
+        data.keys().hasOnly(['uid', 'email', 'invite_code', 'granted_at']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        isValidId(data.invite_code) &&
+        data.invite_code.size() >= 8 &&
+        data.granted_at is timestamp;
+    }
+
+    match /apps/{appId} {
+      allow get: if isValidId(appId);
+      allow list: if true;
+      allow create: if isAdmin() &&
+        isValidId(appId) &&
+        isValidApp(incoming()) &&
+        incoming().id == appId &&
+        incoming().created_at == request.time;
+      allow update: if isAdmin() &&
+        isValidId(appId) &&
+        isValidApp(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().created_at == existing().created_at &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name',
+          'label',
+          'description',
+          'logo_url',
+          'app_url',
+          'app_url_2',
+          'app_url_3',
+          'app_url_4',
+          'tone',
+          'sort_order',
+          'vip_text',
+          'open_text',
+          'is_active',
+          'open_mode'
+        ]);
+      allow delete: if isAdmin() && isValidId(appId);
+    }
+
+    match /slider_photos/{slideId} {
+      allow get: if isValidId(slideId);
+      allow list: if true;
+      allow create: if isAdmin() &&
+        isValidId(slideId) &&
+        isValidSliderPhoto(incoming()) &&
+        incoming().id == slideId &&
+        incoming().created_at == request.time;
+      allow update: if isAdmin() &&
+        isValidId(slideId) &&
+        isValidSliderPhoto(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().created_at == existing().created_at &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['image_data', 'sort_order']);
+      allow delete: if isAdmin() && isValidId(slideId);
+    }
+
+    match /site_config/branding {
+      allow get: if true;
+      allow create: if isAdmin() &&
+        isValidBranding(incoming()) &&
+        incoming().updated_at == request.time;
+      allow update: if isAdmin() &&
+        isValidBranding(incoming()) &&
+        incoming().updated_at == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['header_title', 'updated_at']);
+    }
+
+    match /site_config/social_links {
+      allow get: if true;
+      allow create: if isAdmin() && isValidSocialLinks(incoming());
+      allow update: if isAdmin() &&
+        isValidSocialLinks(incoming()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'telegram',
+          'youtube',
+          'whatsapp',
+          'instagram'
+        ]);
+    }
+
+    match /admin_invites/{inviteCode} {
+      allow get, list: if isOwner();
+      allow create: if isOwner() &&
+        isValidId(inviteCode) &&
+        isValidAdminInvite(incoming()) &&
+        incoming().code == inviteCode &&
+        incoming().created_at == request.time;
+      allow update: if isOwner() &&
+        isValidId(inviteCode) &&
+        isValidAdminInvite(incoming()) &&
+        incoming().code == existing().code &&
+        incoming().created_at == existing().created_at &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['label', 'is_active']);
+      allow delete: if isOwner() && isValidId(inviteCode);
+    }
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && (isOwner() || (isSignedIn() && request.auth.uid == uid));
+      allow list: if isOwner();
+      allow create: if isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        isValidId(uid) &&
+        uid == request.auth.uid &&
+        isValidAdminMember(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().email == request.auth.token.email &&
+        incoming().granted_at == request.time &&
+        exists(/databases/$(database)/documents/admin_invites/$(incoming().invite_code)) &&
+        get(/databases/$(database)/documents/admin_invites/$(incoming().invite_code)).data.is_active == true;
+      allow delete: if isValidId(uid) && isOwner();
+    }
+  }
+}
